@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const store = mutation({
@@ -62,5 +62,28 @@ export const store = mutation({
     if (imageUrl) doc.imageUrl = imageUrl;
 
     return await ctx.db.insert("users", doc);
+  },
+});
+
+
+export const getCurrentUser = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
   },
 });

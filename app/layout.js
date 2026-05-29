@@ -3,6 +3,7 @@ import "./globals.css";
 import HeaderAuth from "@/components/header-auth";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,7 +25,8 @@ export default function RootLayout({ children }) {
         <ClerkProvider>
           <ConvexClientProvider>
             <HeaderAuth />  
-            <main className="min-h-screen">{children}</main>
+            <main className="min-h-screen"><Toaster richColors/>{children}</main>
+            
           </ConvexClientProvider>
         </ClerkProvider>
       </body>
