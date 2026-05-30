@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,18 +111,17 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create New Group</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
             <Label htmlFor="name">Group Name</Label>
             <Input
               id="name"
               placeholder="Enter group name"
-              className="h-10"
               {...register("name")}
             />
             {errors.name && (
@@ -129,23 +129,21 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }) {
             )}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             <Label htmlFor="description">Description (Optional)</Label>
             <Textarea
               id="description"
               placeholder="Enter group description"
-              rows={4}
-              className="min-h-[100px] resize-none field-sizing-fixed py-2.5"
               {...register("description")}
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             <Label>Members</Label>
             <div className="flex flex-wrap gap-2 mb-2">
               {/* Current user (always included) */}
               {currentUser && (
-                <Badge variant="secondary" className="px-3 py-1.5 text-sm">
+                <Badge variant="secondary" className="px-3 py-1">
                   <Avatar className="h-5 w-5 mr-2">
                     <AvatarImage src={currentUser.imageUrl} />
                     <AvatarFallback>
@@ -254,7 +252,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }) {
             )}
           </div>
 
-          <div className="flex justify-end gap-3 pt-6">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
@@ -264,7 +262,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess }) {
             >
               {isSubmitting ? "Creating..." : "Create Group"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
