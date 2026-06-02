@@ -1,0 +1,173 @@
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const getGroupExpenses = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, { groupId }) => {
+    const currentUser = await ctx.runQuery(internal.users.getCurrentUser);
+
+    const group = await ctx.db.get(groupId);
+    if (!group) throw new Error("Group not found");
+
+    if (!group.members.some((m) => m.userId === currentUser._id))
+      throw new Error("You are not a member of this group");
+
+    const expenses = await ctx.db
+      .query("expenses")
+      .withIndex("by_group", (q) => q.eq("groupId", groupId))
+      .collect();
+
+    const settlements = await ctx.db
+      .query("settlements")
+      .withIndex("by_group", (q) => q.eq("groupId", groupId))
+      .collect();
+
+    // members map
+    const memberDetails = await Promise.all(
+      group.members.map(async (m) => {
+        const u = await ctx.db.get(m.userId);
+        return u
+          ? {
+              userId: u._id,
+              name: u.name,
+              imageUrl: u.imageUrl,
+              role: m.role,
+            }
+          : null;
+      }),
+    );
+
+    // one the most important part of the Logic serctions
+    const ids = memberDetails.map((m) => m.id);
+    // Balance calculation setup
+    //--------------------------
+    // Initialize totals objects to track overall balance for each users
+    // Format : {userId1:balance1, userId2:balance2, ...}
+
+    const totals = Object.fromEntries(ids.map((id) => [id, 0]));
+    // create a two-diamentional ledget to track who owes who how much
+    // ledger[A][B] = how much A owes B
+    // for Example if we have 3 users (user1,user2,user3)
+    // ledger would look like this:
+    // ledger = {
+    //    "user1": {"user2":0, "user3":0},
+    //    "user2": {"user1":0, "user3":0},
+    //    "user3": {"user1":0, "user2":0},
+    //}
+    const ledger = {};
+
+    ids.forEach((id) => {
+      ledger[id] = {};
+      ids.forEach((b) => {
+        if (a !== b) ledger[a][b] = 0; // no self-loans
+      });
+    });
+
+    // Apply Expenses to Balances
+    // ------------------------
+    //
+    // Example:
+    // - Expense 1: user1 paid $60, split equally among all 3 users ($20 each)
+    // - After applying this expense:
+    //
+    //   - totals = { "user1": +40, "user2": -20, "user3": -20 }
+    //
+    //   - ledger = {
+    //       "user1": { "user2": 0, "user3": 0 },
+    //       "user2": { "user1": 20, "user3": 0 },
+    //       "user3": { "user1": 20, "user2": 0 }
+    //     }
+    //
+    // - This means user2 owes user1 $20, and user3 owes user1 $20
+
+    for (const exp of expenses) {
+      const payer = exp.paidByUserId;
+
+      for (const split of exp.splits) {
+        // skip if this is the payer or already paid
+        if (split.userId === payer || split.paid) continue;
+
+        const debtor = split.userId;
+        const amt = split.amount;
+
+        // update totals: increase payer's balance and decrease debtor's balance
+        totals[payer] -= amt; // payer gets money
+        totals[debtor] += amt; // debtor owes money
+
+        ledger[debtor][payer] += amt; // debtor owes money to payer
+      }
+    }
+
+    // Apply Settlements to Balances
+    // ---------------------------
+    // Example:
+    // - Settlement: user2 paid $10 to user1
+    // - After applying this settlement:
+    //   - totals = { "user1": +30, "user2": -10, "user3": -20 }
+    //   - ledger = {
+    //       "user1": { "user2": 0, "user3": 0 },
+    //       "user2": { "user1": 10, "user3": 0 },
+    //       "user3": { "user1": 20, "user2": 0 }
+    //     }
+    //   - This means user2 now owes user1 only $10, and user3 still owes user1 $20
+
+    for (const s of settlements) {
+      // Update totals: increase payer's balance, decrease receiver's balance
+      totals[s.paidByUserId] += s.amount;
+      totals[s.receivedByUserId] -= s.amount;
+
+      // Update ledger: reduce what the payer owes to the receiver
+      ledger[s.paidByUserId][s.receivedByUserId] -= s.amount;
+    }
+
+    const balances = memberDetails.map((m) => ({
+      ...m,
+      totalBalance: totals[m.id],
+      owed: Object.values(ledger[m.id])
+      .filter(([,v])=> v > 0)
+      .map(([to,amount])=> ({to,amount})),
+      owedBy: ids
+      .filter((other)=> ledger[other][m.id] > 0)
+      .map((other)=>({from:other, amount:ledger[other][m.id]})),
+    }));
+
+    const userLookupMap = {};
+    memberDetails.forEach((m)=> {
+        userLookupMap[m.id] = m;
+    });
+
+    return {
+        group:{
+            id : group._id,
+            name: group.name,
+            description: group.description,
+        },
+        members: memberDetails, // All group members with details
+        expenses, // All expenses for the group
+        settlements, // All settlements for the group
+        balances, // All balances for the group
+        userLookupMap, // A map of user IDs to their detailed information
+    }
+  },
+});
+
+
+export const deleteExpense = mutation({
+    args: {
+        expenseId: v.id("expenses"),
+    },
+    handler: async(ctx, args)=> {
+        const user = await ctx.runQuery(internal.users.getCurrentUser);
+
+        const expense = await ctx.db.get(args.expenseId);
+        if(!expense) throw new Error("Expense not found");
+
+        if(expense.createdBy !== user._id && expense.paidByUserId !== user._id) {
+            throw new Error("You don't have permission to delete this expense");
+        }    
+
+        await ctx.db.delete(args.expenseId);
+
+        return {success: true};
+    },
+})
