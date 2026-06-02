@@ -1,18 +1,15 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import HeaderAuth from "@/components/header-auth";
-import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Toaster } from "@/components/ui/sonner";
+import { ConvexClientProvider } from "@/components/convex-client-provider";
+import { Toaster } from "sonner";
+import HeaderAuth from "@/components/header-auth";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "splitr",
-  description: "The smartest way split the expenses with friends",
+  title: "Splitr",
+  description: "The smartest way to split expenses with friends",
 };
 
 export default function RootLayout({ children }) {
@@ -21,12 +18,17 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="icon" href="/logos/logo-s.png" sizes="any" />
       </head>
-      <body className={`${inter.className}`} suppressHydrationWarning>
-        <ClerkProvider>
+      <body className={`${inter.className}`}>
+        <ClerkProvider
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        >
           <ConvexClientProvider>
-            <HeaderAuth />  
-            <main className="min-h-screen"><Toaster richColors/>{children}</main>
-            
+            <HeaderAuth />
+            <main className="min-h-screen">
+              <Toaster richColors />
+
+              {children}
+            </main>
           </ConvexClientProvider>
         </ClerkProvider>
       </body>

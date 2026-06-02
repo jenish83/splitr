@@ -38,7 +38,7 @@ export default function ContactsPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-12">
+      <div className="w-full py-12">
         <BarLoader width={"100%"} color="#36d7b7" />
       </div>
     );
@@ -47,7 +47,7 @@ export default function ContactsPage() {
   const { users, groups } = data || { users: [], groups: [] };
 
   return (
-    <div className="container mx-auto">
+    <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between mb-6">
         <h1 className="text-5xl gradient-title">Contacts</h1>
         <Button onClick={() => setIsCreateGroupModalOpen(true)}>

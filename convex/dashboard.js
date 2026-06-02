@@ -1,7 +1,7 @@
 import { internal } from "./_generated/api";
 import { query } from "./_generated/server";
 
-export const getUserBalance = query({
+export const getUserBalances = query({
   handler: async (ctx) => {
     const user = await ctx.runQuery(internal.users.getCurrentUser);
 
@@ -26,7 +26,7 @@ export const getUserBalance = query({
       if (isPayer) {
         for (const s of e.splits) {
           //skip users own split or already paid splits
-          if (s.userId === user.id || s.paid) continue;
+          if (s.userId === user._id || s.paid) continue;
           //add to the amount owed by the other user
 
           youAreOwed += s.amount;
@@ -39,7 +39,7 @@ export const getUserBalance = query({
           mySplit.amount;
       }
     }
-    const settlements = (await ctx.db.query("settlements").collects()).filter(
+    const settlements = (await ctx.db.query("settlements").collect()).filter(
       (s) =>
         !s.groupId &&
         (s.paidByUserId === user._id || s.receivedByUserId === user._id),
@@ -49,11 +49,11 @@ export const getUserBalance = query({
         // if user paid someone else -> reduce what user owes
         if(s.paidByUserId === user._id){
             youOwe -= s.amount;
-            (balanceByUser[s.receivedByUserId] ??= { owed:0, owing:0}).owing += s.amount;
+            (balanceByUser[s.receivedByUserId] ??= { owed: 0, owing: 0 }).owing -= s.amount;
         }else{
             //Someone paid the user -> reduce what they owe the user
             youAreOwed -= s.amount;
-            (balanceByUser[s.paidByUserId] ??= { owed:0, owing:0}).owed += s.amount;
+            (balanceByUser[s.paidByUserId] ??= { owed: 0, owing: 0 }).owed -= s.amount;
         }
     }
 
@@ -259,4 +259,4 @@ export const getUserGroups = query({
   
       return enhancedGroups;
     },
-  });
+});
