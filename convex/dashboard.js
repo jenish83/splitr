@@ -83,7 +83,7 @@ export const getUserBalances = query({
     return{
         youOwe, // total amount you owe others
         youAreOwed, // total amount others owe you
-        totalBalance: youOwe + youAreOwed, //net balance
+        totalBalance: youOwe - youAreOwed, //net balance
         oweDetails: {youOwe:youOweList, youAreOwedBy:youAreOwedByList},// detailed list of people you owe and who owe you
     };
   },

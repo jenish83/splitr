@@ -184,7 +184,7 @@ export default function SettlementForm({ entityType, entityData, onSuccess }) {
           >
             <div className="flex items-center space-x-2 border rounded-md p-3">
               <RadioGroupItem value="youPaid" id="youPaid" />
-              <Label htmlFor="youPaid" className="flex-grow cursor-pointer">
+              <Label htmlFor="youPaid" className="flex-row cursor-pointer">
                 <div className="flex items-center">
                   <Avatar className="h-6 w-6 mr-2">
                     <AvatarImage src={currentUser.imageUrl} />
@@ -199,7 +199,7 @@ export default function SettlementForm({ entityType, entityData, onSuccess }) {
 
             <div className="flex items-center space-x-2 border rounded-md p-3">
               <RadioGroupItem value="theyPaid" id="theyPaid" />
-              <Label htmlFor="theyPaid" className="flex-grow cursor-pointer">
+              <Label htmlFor="theyPaid" className="flex-row cursor-pointer">
                 <div className="flex items-center">
                   <Avatar className="h-6 w-6 mr-2">
                     <AvatarImage src={otherUser.imageUrl} />
@@ -326,7 +326,7 @@ export default function SettlementForm({ entityType, entityData, onSuccess }) {
               >
                 <div className="flex items-center space-x-2 border rounded-md p-3">
                   <RadioGroupItem value="youPaid" id="youPaid" />
-                  <Label htmlFor="youPaid" className="flex-grow cursor-pointer">
+                  <Label htmlFor="youPaid" className="flex-row cursor-pointer">
                     <div className="flex items-center">
                       <Avatar className="h-6 w-6 mr-2">
                         <AvatarImage src={currentUser.imageUrl} />

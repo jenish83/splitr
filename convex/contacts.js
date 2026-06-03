@@ -3,9 +3,7 @@ import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
-/* ──────────────────────────────────────────────────────────────────────────
-   1. getAllContacts – 1‑to‑1 expense contacts + groups
-   ──────────────────────────────────────────────────────────────────────── */
+  /* 1. getAllContacts – 1‑to‑1 expense contacts + groups */
 export const getAllContacts = query({
   handler: async (ctx) => {
     // Use the centralized getCurrentUser instead of duplicating auth logic
@@ -79,9 +77,9 @@ export const getAllContacts = query({
   },
 });
 
-/* ──────────────────────────────────────────────────────────────────────────
-   2. createGroup – create a new group
-   ──────────────────────────────────────────────────────────────────────── */
+
+  //  2. createGroup – create a new group
+
 export const createGroup = mutation({
   args: {
     name: v.string(),
