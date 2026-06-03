@@ -1,5 +1,6 @@
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import { query } from "./_generated/server";
 
 export const getGroupExpenses = query({
   args: { groupId: v.id("groups") },
@@ -45,7 +46,7 @@ export const getGroupExpenses = query({
     // Format : {userId1:balance1, userId2:balance2, ...}
 
     const totals = Object.fromEntries(ids.map((id) => [id, 0]));
-    // create a two-diamentional ledget to track who owes who how much
+    // create a two-diamentional ledger to track who owes who how much
     // ledger[A][B] = how much A owes B
     // for Example if we have 3 users (user1,user2,user3)
     // ledger would look like this:
