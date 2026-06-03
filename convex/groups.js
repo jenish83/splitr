@@ -1,5 +1,4 @@
 import { internal } from "./_generated/api";
-import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getGroupExpenses = query({
@@ -39,9 +38,7 @@ export const getGroupExpenses = query({
     );
 
     // one the most important part of the Logic serctions
-    const ids = memberDetails
-        .filter(Boolean)
-  .map((m) => m.userId);
+    const ids = memberDetails.filter(Boolean).map((m) => m.userId);
     // Balance calculation setup
     //--------------------------
     // Initialize totals objects to track overall balance for each users
@@ -59,9 +56,9 @@ export const getGroupExpenses = query({
     //}
     const ledger = {};
     ids.forEach((a) => {
-        ledger[a] = {};
-        ids.forEach((b) => {
-            if (a !== b) ledger[a][b] = 0; // no self-loans
+      ledger[a] = {};
+      ids.forEach((b) => {
+        if (a !== b) ledger[a][b] = 0; // no self-loans
       });
     });
     // Apply Expenses to Balances
@@ -145,74 +142,123 @@ export const getGroupExpenses = query({
         const diff = ledger[a][b] - ledger[b][a];
 
         if (diff > 0) {
-            // if a owes b more than b owes a, then a owes b the difference
+          // if a owes b more than b owes a, then a owes b the difference
           ledger[a][b] = diff;
           ledger[b][a] = 0;
         } else if (diff < 0) {
-            // if b owes a more than a owes b, then b owes a the difference
+          // if b owes a more than a owes b, then b owes a the difference
           ledger[b][a] = -diff;
           ledger[a][b] = 0;
         } else {
-            // if a owes b and b owes a the same amount, then they are settled up
+          // if a owes b and b owes a the same amount, then they are settled up
           ledger[a][b] = 0;
           ledger[b][a] = 0;
         }
       }
     }
 
-
-    const balances = memberDetails
-    .filter(Boolean)
-    .map((m) => ({
-    ...m,
-    totalBalance: totals[m.userId],
-    owed: Object.entries(ledger[m.userId] ?? {})
-      .filter(([, amount]) => amount > 0)
-      .map(([to, amount]) => ({ to, amount })),
-    owedBy: ids
-      .filter((other) => (ledger[other]?.[m.userId] ?? 0) > 0)
-      .map((other) => ({ from: other, amount: ledger[other][m.userId] })),
-  }));
+    const balances = memberDetails.filter(Boolean).map((m) => ({
+      ...m,
+      totalBalance: totals[m.userId],
+      owed: Object.entries(ledger[m.userId] ?? {})
+        .filter(([, amount]) => amount > 0)
+        .map(([to, amount]) => ({ to, amount })),
+      owedBy: ids
+        .filter((other) => (ledger[other]?.[m.userId] ?? 0) > 0)
+        .map((other) => ({ from: other, amount: ledger[other][m.userId] })),
+    }));
 
     const userLookupMap = {};
-    memberDetails
-      .filter(Boolean)
-      .forEach((m) => {
-        userLookupMap[m.userId] = m;
-      });
+    memberDetails.filter(Boolean).forEach((m) => {
+      userLookupMap[m.userId] = m;
+    });
 
     return {
-        group:{
-            id : group._id,
-            name: group.name,
-            description: group.description,
-        },
-        members: memberDetails, // All group members with details
-        expenses, // All expenses for the group
-        settlements, // All settlements for the group
-        balances, // All balances for the group
-        userLookupMap, // A map of user IDs to their detailed information
-    }
+      group: {
+        id: group._id,
+        name: group.name,
+        description: group.description,
+      },
+      members: memberDetails, // All group members with details
+      expenses, // All expenses for the group
+      settlements, // All settlements for the group
+      balances, // All balances for the group
+      userLookupMap, // A map of user IDs to their detailed information
+    };
   },
 });
 
-
-export const deleteExpense = mutation({
+export const getGroupOrMembers = query({
     args: {
-        expenseId: v.id("expenses"),
+      groupId: v.optional(v.id("groups")), // Optional - if provided, will return details for just this group
     },
-    handler: async(ctx, args)=> {
-        const user = await ctx.runQuery(internal.users.getCurrentUser);
-
-        const expense = await ctx.db.get(args.expenseId);
-        if(!expense) throw new Error("Expense not found");
-
-        if(expense.createdBy !== user._id && expense.paidByUserId !== user._id) {
-            throw new Error("You don't have permission to delete this expense");
-        }    
-
-        await ctx.db.delete(args.expenseId);
-
-        return {success: true};
+    handler: async (ctx, args) => {
+      // Use centralized getCurrentUser function
+      const currentUser = await ctx.runQuery(internal.users.getCurrentUser);
+  
+      // Get all groups where the user is a member
+      const allGroups = await ctx.db.query("groups").collect();
+      const userGroups = allGroups.filter((group) =>
+        group.members.some((member) => member.userId === currentUser._id)
+      );
+  
+      // If a specific group ID is provided, only return details for that group
+      if (args.groupId) {
+        const selectedGroup = userGroups.find(
+          (group) => group._id === args.groupId
+        );
+  
+        if (!selectedGroup) {
+          throw new Error("Group not found or you're not a member");
+        }
+  
+        // Get all user details for this group's members
+        const memberDetails = await Promise.all(
+          selectedGroup.members.map(async (member) => {
+            const user = await ctx.db.get(member.userId);
+            if (!user) return null;
+  
+            return {
+              id: user._id,
+              name: user.name,
+              email: user.email,
+              imageUrl: user.imageUrl,
+              role: member.role,
+            };
+          })
+        );
+  
+        // Filter out any null values (in case a user was deleted)
+        const validMembers = memberDetails.filter((member) => member !== null);
+  
+        // Return selected group with member details
+        return {
+          selectedGroup: {
+            id: selectedGroup._id,
+            name: selectedGroup.name,
+            description: selectedGroup.description,
+            createdBy: selectedGroup.createdBy,
+            members: validMembers,
+          },
+          groups: userGroups.map((group) => ({
+            id: group._id,
+            name: group.name,
+            description: group.description,
+            memberCount: group.members.length,
+          })),
+        };
+      } else {
+        // Just return the list of groups without member details
+        return {
+          selectedGroup: null,
+          groups: userGroups.map((group) => ({
+            id: group._id,
+            name: group.name,
+            description: group.description,
+            memberCount: group.members.length,
+          })),
+        };
+      }
     },
-})
+  });
+
