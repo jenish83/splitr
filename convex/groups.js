@@ -1,3 +1,4 @@
+import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -38,7 +39,9 @@ export const getGroupExpenses = query({
     );
 
     // one the most important part of the Logic serctions
-    const ids = memberDetails.map((m) => m.id);
+    const ids = memberDetails
+        .filter(Boolean)
+  .map((m) => m.userId);
     // Balance calculation setup
     //--------------------------
     // Initialize totals objects to track overall balance for each users
@@ -55,14 +58,12 @@ export const getGroupExpenses = query({
     //    "user3": {"user1":0, "user2":0},
     //}
     const ledger = {};
-
-    ids.forEach((id) => {
-      ledger[id] = {};
-      ids.forEach((b) => {
-        if (a !== b) ledger[a][b] = 0; // no self-loans
+    ids.forEach((a) => {
+        ledger[a] = {};
+        ids.forEach((b) => {
+            if (a !== b) ledger[a][b] = 0; // no self-loans
       });
     });
-
     // Apply Expenses to Balances
     // ------------------------
     //
@@ -91,8 +92,8 @@ export const getGroupExpenses = query({
         const amt = split.amount;
 
         // update totals: increase payer's balance and decrease debtor's balance
-        totals[payer] -= amt; // payer gets money
-        totals[debtor] += amt; // debtor owes money
+        totals[payer] = totals[payer] + amt; // payer gets money
+        totals[debtor] = totals[debtor] - amt; // debtor owes money
 
         ledger[debtor][payer] += amt; // debtor owes money to payer
       }
@@ -120,21 +121,65 @@ export const getGroupExpenses = query({
       ledger[s.paidByUserId][s.receivedByUserId] -= s.amount;
     }
 
-    const balances = memberDetails.map((m) => ({
-      ...m,
-      totalBalance: totals[m.id],
-      owed: Object.values(ledger[m.id])
-      .filter(([,v])=> v > 0)
-      .map(([to,amount])=> ({to,amount})),
-      owedBy: ids
-      .filter((other)=> ledger[other][m.id] > 0)
-      .map((other)=>({from:other, amount:ledger[other][m.id]})),
-    }));
+    // Simplify the Ledger (Debt Simplification)
+    // -----------------------------------------
+    // Example with a circular debt:
+    // - Initial ledger:
+    //   - user1 owes user2 $10
+    //   - user2 owes user3 $15
+    //   - user3 owes user1 $5
+    //
+    // - After simplification:
+    //   - user1 owes user2 $5
+    //   - user2 owes user3 $15
+    //   - user3 owes user1 $0
+    //
+    // This reduces the circular debt pattern
+
+    for (let i = 0; i < ids.length; i++) {
+      const a = ids[i];
+      for (let j = i + 1; j < ids.length; j++) {
+        const b = ids[j];
+
+        // Net debt between a and b (positive => a owes b)
+        const diff = ledger[a][b] - ledger[b][a];
+
+        if (diff > 0) {
+            // if a owes b more than b owes a, then a owes b the difference
+          ledger[a][b] = diff;
+          ledger[b][a] = 0;
+        } else if (diff < 0) {
+            // if b owes a more than a owes b, then b owes a the difference
+          ledger[b][a] = -diff;
+          ledger[a][b] = 0;
+        } else {
+            // if a owes b and b owes a the same amount, then they are settled up
+          ledger[a][b] = 0;
+          ledger[b][a] = 0;
+        }
+      }
+    }
+
+
+    const balances = memberDetails
+    .filter(Boolean)
+    .map((m) => ({
+    ...m,
+    totalBalance: totals[m.userId],
+    owed: Object.entries(ledger[m.userId] ?? {})
+      .filter(([, amount]) => amount > 0)
+      .map(([to, amount]) => ({ to, amount })),
+    owedBy: ids
+      .filter((other) => (ledger[other]?.[m.userId] ?? 0) > 0)
+      .map((other) => ({ from: other, amount: ledger[other][m.userId] })),
+  }));
 
     const userLookupMap = {};
-    memberDetails.forEach((m)=> {
-        userLookupMap[m.id] = m;
-    });
+    memberDetails
+      .filter(Boolean)
+      .forEach((m) => {
+        userLookupMap[m.userId] = m;
+      });
 
     return {
         group:{
