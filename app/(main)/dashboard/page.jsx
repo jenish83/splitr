@@ -16,6 +16,7 @@ import Link from "next/link";
 import { ExpenseSummary } from "./components/expense-summary";
 import { BalanceSummary } from "./components/balance-summary";
 import { GroupList } from "./components/group-list";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Dashboard() {
   const { data: balances, isLoading: balancesLoading } = useConvexQuery(
@@ -47,14 +48,32 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <div className="flex justify-between flex-col sm:flex-row sm:items-center gap-4">
-            <h1 className="text-5xl gradient-title">Dashboard</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-5xl gradient-title">Dashboard</h1>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-sm text-muted-foreground">Currency:</span>
+            <Select className="bg-white shadow-sm">
+              <SelectTrigger className="w-fit bg-black">
+                <SelectValue placeholder="Select a Currency" className="text-white" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="INR">INR</SelectItem>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="GBP">GBP</SelectItem>
+                <SelectItem value="AUD">AUD</SelectItem>
+                <SelectItem value="CAD">CAD</SelectItem>
+              </SelectContent>
+            </Select>
             <Button asChild>
               <Link href="/expenses/new">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add expense
               </Link>
             </Button>
+            </div>
           </div>
 
           {/* Balance overview */}

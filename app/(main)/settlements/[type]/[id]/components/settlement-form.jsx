@@ -166,7 +166,7 @@ export default function SettlementForm({ entityType, entityData, onSuccess }) {
               </span>
             </div>
           )}
-        </div>
+        </div>  
 
         {/* Payment direction */}
         <div className="space-y-2">
@@ -423,6 +423,5 @@ export default function SettlementForm({ entityType, entityData, onSuccess }) {
       </form>
     );
   }
-
   return null;
 }
