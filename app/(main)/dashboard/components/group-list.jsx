@@ -1,9 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useCurrency } from "@/components/currency-provider";
 import { Users } from "lucide-react";
 
 const ACCENT = "#20c997";
 
 export function GroupList({ groups }) {
+  const { format } = useCurrency();
+
   if (!groups || groups.length === 0) {
     return (
       <div className="text-center py-6">
@@ -43,7 +48,7 @@ export function GroupList({ groups }) {
               }`}
               style={balance >= 0 ? { color: ACCENT } : undefined}
             >
-              {balance >= 0 ? "+" : "-"}${Math.abs(balance).toFixed(2)}
+              {format(balance, { signed: true })}
             </span>
           </Link>
         );

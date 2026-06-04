@@ -1,5 +1,6 @@
 "use client";
 
+import { useCurrency } from "@/components/currency-provider";
 import { useConvexQuery } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +18,7 @@ import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
  * }
  */
 export function GroupBalances({ balances }) {
+  const { format } = useCurrency();
   const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
 
   /* ───── guards ────────────────────────────────────────────────────────── */
@@ -70,11 +72,7 @@ export function GroupBalances({ balances }) {
                 : ""
           }`}
         >
-          {me.totalBalance > 0
-            ? `+$${me.totalBalance.toFixed(2)}`
-            : me.totalBalance < 0
-              ? `-$${Math.abs(me.totalBalance).toFixed(2)}`
-              : "$0.00"}
+          {format(me.totalBalance, { signed: true })}
         </p>
         <p className="text-sm text-muted-foreground mt-1">
           {me.totalBalance > 0
@@ -114,7 +112,7 @@ export function GroupBalances({ balances }) {
                       <span className="text-sm">{member.name}</span>
                     </div>
                     <span className="font-medium text-green-600">
-                      ${member.amount.toFixed(2)}
+                      {format(member.amount)}
                     </span>
                   </div>
                 ))}
@@ -145,7 +143,7 @@ export function GroupBalances({ balances }) {
                       <span className="text-sm">{member.name}</span>
                     </div>
                     <span className="font-medium text-red-600">
-                      ${member.amount.toFixed(2)}
+                      {format(member.amount)}
                     </span>
                   </div>
                 ))}

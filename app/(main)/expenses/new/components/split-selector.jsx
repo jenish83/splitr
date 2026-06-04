@@ -5,8 +5,9 @@ import { useUser } from "@clerk/nextjs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { useCurrency } from "@/components/currency-provider";
 
-const formatMoney = (value) => (Number(value) || 0).toFixed(2);
+const formatAmount = (value) => (Number(value) || 0).toFixed(2);
 const formatPercent = (value) => (Number(value) || 0).toFixed(1);
 
 const sliderValue = (value) =>
@@ -19,6 +20,7 @@ export function SplitSelector({
   paidByUserId,
   onSplitsChange,
 }) {
+  const { format, symbol } = useCurrency();
   const { user } = useUser();
   const numericAmount = Number(amount) || 0;
   const [splits, setSplits] = useState([]);
@@ -191,7 +193,7 @@ export function SplitSelector({
 
             {type === "equal" && (
               <div className="text-right text-sm">
-                ${formatMoney(split.amount)} ({formatPercent(split.percentage)}
+                {format(split.amount)} ({formatPercent(split.percentage)}
                 %)
               </div>
             )}
@@ -224,7 +226,7 @@ export function SplitSelector({
                   />
                   <span className="text-sm text-muted-foreground">%</span>
                   <span className="text-sm ml-1">
-                    ${formatMoney(split.amount)}
+                    {format(split.amount)}
                   </span>
                 </div>
               </div>
@@ -234,13 +236,13 @@ export function SplitSelector({
               <div className="flex items-center gap-2 flex-1">
                 <div className="flex-1"></div>
                 <div className="flex gap-1 items-center">
-                  <span className="text-sm text-muted-foreground">$</span>
+                  <span className="text-sm text-muted-foreground">{symbol}</span>
                   <Input
                     type="number"
                     min="0"
                     max={numericAmount * 2}
                     step="0.01"
-                    value={formatMoney(split.amount)}
+                    value={formatAmount(split.amount)}
                     onChange={(e) =>
                       updateExactSplit(split.userId, e.target.value)
                     }
@@ -262,7 +264,7 @@ export function SplitSelector({
             <span
               className={`font-medium ${!isAmountValid ? "text-amber-600" : ""}`}
             >
-              ${formatMoney(totalAmount)}
+              {format(totalAmount)}
             </span>
             {type !== "equal" && (
               <span
@@ -283,8 +285,8 @@ export function SplitSelector({
 
       {canShowSplits && type === "exact" && !isAmountValid && (
         <div className="text-sm text-amber-600 mt-2">
-          The sum of all splits (${formatMoney(totalAmount)}) should equal the
-          total amount (${formatMoney(numericAmount)}).
+          The sum of all splits ({format(totalAmount)}) should equal the total
+          amount ({format(numericAmount)}).
         </div>
       )}
     </div>

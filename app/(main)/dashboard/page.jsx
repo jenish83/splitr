@@ -17,8 +17,10 @@ import { ExpenseSummary } from "./components/expense-summary";
 import { BalanceSummary } from "./components/balance-summary";
 import { GroupList } from "./components/group-list";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCurrency } from "@/components/currency-provider";
 
 export default function Dashboard() {
+  const { currency, setCurrency, format } = useCurrency();
   const { data: balances, isLoading: balancesLoading } = useConvexQuery(
     api.dashboard.getUserBalances
   );
@@ -54,7 +56,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center justify-end gap-2">
               <span className="text-sm text-muted-foreground">Currency:</span>
-            <Select className="bg-white shadow-sm">
+            <Select value={currency} onValueChange={setCurrency} className="bg-white shadow-sm">
               <SelectTrigger className="w-fit bg-black">
                 <SelectValue placeholder="Select a Currency" className="text-white" />
               </SelectTrigger>
@@ -65,6 +67,7 @@ export default function Dashboard() {
                 <SelectItem value="GBP">GBP</SelectItem>
                 <SelectItem value="AUD">AUD</SelectItem>
                 <SelectItem value="CAD">CAD</SelectItem>
+                <SelectItem value="JPY">JPY</SelectItem>
               </SelectContent>
             </Select>
             <Button asChild>
@@ -88,14 +91,17 @@ export default function Dashboard() {
                 <div className="text-2xl font-bold">
                   {balances?.totalBalance > 0 ? (
                     <span className="text-[#20c997]">
-                      +${balances.totalBalance.toFixed(2)}
+                      {/* +${balances.totalBalance.toFixed(2)} */}
+                      {format(balances.totalBalance, { signed: true })}
                     </span>
                   ) : balances?.totalBalance < 0 ? (
                     <span className="text-red-600">
-                      -${Math.abs(balances.totalBalance).toFixed(2)}
+                      {/* -${balances.totalBalance.toFixed(2)} */}
+                      {format(balances.totalBalance, { signed: true })}
                     </span>
                   ) : (
-                    <span>$0.00</span>
+                    // <span>$0.00</span>
+                    <span>{format(0)}</span>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -116,7 +122,8 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-[#20c997]">
-                  ${(balances?.youAreOwed ?? 0).toFixed(2)}
+                {/* ${(balances?.youAreOwed ?? 0).toFixed(2)} */}
+                  {format(balances?.youAreOwed ?? 0)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   From {balances?.oweDetails?.youAreOwedBy?.length ?? 0} people
@@ -134,7 +141,8 @@ export default function Dashboard() {
                 {balances?.oweDetails?.youOwe?.length > 0 ? (
                   <>
                     <div className="text-2xl font-bold text-red-600">
-                      ${balances.youOwe.toFixed(2)}
+                      {/* ${balances.youOwe.toFixed(2)} */}
+                      {format(balances.youOwe)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       To {balances.oweDetails.youOwe.length} people
@@ -142,7 +150,8 @@ export default function Dashboard() {
                   </>
                 ) : (
                   <>
-                    <div className="text-2xl font-bold">$0.00</div>
+                    {/* <div className="text-2xl font-bold">$0.00</div> */}
+                    <div className="text-2xl font-bold">{format(0)}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                       You don&apos;t owe anyone
                     </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useCurrency } from "@/components/currency-provider";
 import { useConvexQuery, useConvexMutation } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
 import { format } from "date-fns";
@@ -19,6 +20,7 @@ export function ExpenseList({
   otherPersonId = null,
   userLookupMap = {},
 }) {
+  const { format: formatCurrency } = useCurrency();
   const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
   const deleteExpense = useConvexMutation(api.expenses.deleteExpense);
 
@@ -115,7 +117,7 @@ export function ExpenseList({
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <div className="font-medium">
-                      ${expense.amount.toFixed(2)}
+                      {formatCurrency(expense.amount)}
                     </div>
                     {isGroupExpense ? (
                       <Badge variant="outline" className="mt-1">
@@ -175,8 +177,8 @@ export function ExpenseList({
                           </AvatarFallback>
                         </Avatar>
                         <span>
-                          {isCurrentUser ? "You" : splitUser.name}: $
-                          {split.amount.toFixed(2)}
+                          {isCurrentUser ? "You" : splitUser.name}:{" "}
+                          {formatCurrency(split.amount)}
                         </span>
                       </Badge>
                     );

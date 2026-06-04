@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrency } from "@/components/currency-provider";
 import { useConvexQuery } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
 import { format } from "date-fns";
@@ -14,6 +15,7 @@ export function SettlementList({
   isGroupSettlement = false,
   userLookupMap,
 }) {
+  const { format: formatCurrency } = useCurrency();
   const { data: currentUser } = useConvexQuery(api.users.getCurrentUser);
   console.log("settlements", settlements);
 
@@ -86,7 +88,7 @@ export function SettlementList({
 
                 <div className="text-right">
                   <div className="font-medium">
-                    ${settlement.amount.toFixed(2)}
+                    {formatCurrency(settlement.amount)}
                   </div>
                   {isGroupSettlement ? (
                     <Badge variant="outline" className="mt-1">

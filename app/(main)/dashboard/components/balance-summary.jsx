@@ -1,10 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { useCurrency } from "@/components/currency-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 
 const ACCENT = "#20c997";
 
 export function BalanceSummary({ balances }) {
+  const { format } = useCurrency();
+
   if (!balances) return null;
 
   const { oweDetails } = balances;
@@ -43,7 +48,7 @@ export function BalanceSummary({ balances }) {
                   className="font-semibold shrink-0 ml-2"
                   style={{ color: ACCENT }}
                 >
-                  ${item.amount.toFixed(2)}
+                  {format(item.amount)}
                 </span>
               </Link>
             ))}
@@ -72,7 +77,7 @@ export function BalanceSummary({ balances }) {
                   <span className="text-sm truncate">{item.name}</span>
                 </div>
                 <span className="font-semibold text-red-600 shrink-0 ml-2">
-                  ${item.amount.toFixed(2)}
+                  {format(item.amount)}
                 </span>
               </Link>
             ))}

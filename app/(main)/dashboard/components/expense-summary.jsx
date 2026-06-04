@@ -1,5 +1,6 @@
 "use client";
 
+import { useCurrency } from "@/components/currency-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
@@ -29,6 +30,7 @@ const MONTH_NAMES = [
 const CHART_COLOR = "#20c997";
 
 export function ExpenseSummary({ monthlySpending, totalSpent }) {
+  const { format } = useCurrency();
   const currentYear = new Date().getFullYear();
   const now = new Date();
 
@@ -63,13 +65,15 @@ export function ExpenseSummary({ monthlySpending, totalSpent }) {
           <div className="rounded-xl bg-[#f1f3f5] p-4">
             <p className="text-sm text-muted-foreground">Total this month</p>
             <p className="text-2xl sm:text-3xl font-bold mt-1">
-              ${thisMonthTotal.toFixed(2)}
+            {/* ${thisMonthTotal.toFixed(2)} */}
+              {format(thisMonthTotal)}
             </p>
           </div>
           <div className="rounded-xl bg-[#f1f3f5] p-4">
             <p className="text-sm text-muted-foreground">Total this year</p>
             <p className="text-2xl sm:text-3xl font-bold mt-1">
-              ${(totalSpent ?? 0).toFixed(2)}
+            {/* ${(totalSpent ?? 0).toFixed(2)} */}
+              {format(totalSpent ?? 0)}
             </p>
           </div>
         </div>
@@ -99,10 +103,11 @@ export function ExpenseSummary({ monthlySpending, totalSpent }) {
                 tickFormatter={(v) => v.toLocaleString()}
               />
               <Tooltip
-                formatter={(value) => [
-                  `$${Number(value).toFixed(2)}`,
-                  "Spent",
-                ]}
+              // formatter={(value) => [
+              //   `$${Number(value).toFixed(2)}`,
+              //   "Spent",
+              // ]}
+                formatter={(value) => [format(Number(value)), "Spent"]}
               />
               <Bar
                 dataKey="amount"
