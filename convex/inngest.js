@@ -118,23 +118,21 @@ export const getUsersWithOutstandingDebts = query({
   },
 });
 
+// Lookback for spending insights (90 days covers sparse / older test data)
+const SPENDING_INSIGHTS_LOOKBACK_MS = 90 * 24 * 60 * 60 * 1000;
+
 // Get users with expenses for AI insights
 export const getUsersWithExpenses = query({
   handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();
     const result = [];
-
-    // Get current month start
-    const now = new Date();
-    const oneMonthAgo = new Date(now);
-    oneMonthAgo.setMonth(now.getMonth() - 1);
-    const monthStart = oneMonthAgo.getTime();
+    const since = Date.now() - SPENDING_INSIGHTS_LOOKBACK_MS;
 
     for (const user of users) {
       // First, check expenses where this user is the payer
       const paidExpenses = await ctx.db
         .query("expenses")
-        .withIndex("by_date", (q) => q.gte("date", monthStart))
+        .withIndex("by_date", (q) => q.gte("date", since))
         .filter((q) => q.eq(q.field("paidByUserId"), user._id))
         .collect();
 
@@ -142,7 +140,7 @@ export const getUsersWithExpenses = query({
       // We need to do this separately because we can't filter directly on array contents
       const allRecentExpenses = await ctx.db
         .query("expenses")
-        .withIndex("by_date", (q) => q.gte("date", monthStart))
+        .withIndex("by_date", (q) => q.gte("date", since))
         .collect();
 
       const splitExpenses = allRecentExpenses.filter((expense) =>
@@ -165,20 +163,16 @@ export const getUsersWithExpenses = query({
   },
 });
 
-// Get a specific user's expenses for the past month
+// Get a specific user's expenses for the insights lookback window
 export const getUserMonthlyExpenses = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    // Get current month start
-    const now = new Date();
-    const oneMonthAgo = new Date(now);
-    oneMonthAgo.setMonth(now.getMonth() - 1);
-    const monthStart = oneMonthAgo.getTime();
+    const since = Date.now() - SPENDING_INSIGHTS_LOOKBACK_MS;
 
-    // Get all expenses involving this user from the past month
+    // Get all expenses involving this user in the lookback window
     const allExpenses = await ctx.db
       .query("expenses")
-      .withIndex("by_date", (q) => q.gte("date", monthStart))
+      .withIndex("by_date", (q) => q.gte("date", since))
       .collect();
 
     // Filter for expenses where this user is involved
